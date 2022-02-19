@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Row, Input, Button, Col, message } from 'antd';
-import { SearchOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { Card, Table, Row, Input, Button, Col, message, Popconfirm } from 'antd';
+import { SearchOutlined, PlusCircleOutlined, EditOutlined, ReloadOutlined, DeleteFilled } from '@ant-design/icons';
 import moment from 'moment';
 import NewModal from "./modals/NewReminder";
 import '../configs/firebase';
@@ -10,7 +10,7 @@ import { OS, currentBrowser } from "../configs/system";
 
 
 const Reminder = () => {
-    const [list, SetList] = useState([])
+    const [list, setList] = useState([])
     const [page, setPage] = useState(1)
     const [total, setTotal] = useState(10)
     const [loading, setLoading] = useState(false)
@@ -24,21 +24,48 @@ const Reminder = () => {
             dataIndex: 'id'
         },
         {
-            title: 'Event',
-            dataIndex: 'event'
+            title: 'Title',
+            dataIndex: 'title'
         },
         {
             title: 'Details',
             dataIndex: 'details'
         },
         {
+            title: 'Participants',
+            dataIndex: 'participants',
+            render: (_, record) => (
+                <span>{
+                    record.participants.map((item) =>
+                        <div key={item.id}>{item.email}</div>
+                    )
+                }</span>
+            ),
+        },
+        {
             title: 'Date',
             dataIndex: 'event_date',
             render: (_, record) => (
-                <span>{moment.parseZone(record.created_on).format('MMM, Do YYYY, hh:mm A')}</span>
+                <span>{moment.parseZone(record.event_date).format('MMM, Do YYYY, hh:mm A')}</span>
             ),
             sorter: true
-        }
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            render: (_, record) => (<><span style={{ cursor: 'pointer', color: 'blue', paddingRight: '10px' }} onClick={() => sendReminder(record)} ><ReloadOutlined /></span>
+                 <Popconfirm
+                        placement="right"
+                        title={"Are you sure you want to cancel this record?"}
+                        onConfirm={() => cancelReminder(record)}
+                        okText="Yes"
+                        cancelText="No">
+                        <DeleteFilled />
+                    </Popconfirm>
+                {/* <span style={{ cursor: 'pointer', color: 'green',paddingLeft: '10px' }} onClick={() => setReminder(record)} ><EditOutlined /></span> */}
+                </>
+                ),
+        },
     ];
 
     const AuthUser = async => {
@@ -74,13 +101,13 @@ const Reminder = () => {
     }
 
     const saveAuth = async (data) => {
-        const hide = message.loading("Fetching")
+        const hide = message.loading("Processing")
         try {
             const client = await AxiosClient();
             const response = await client.post(`auth/onboard`, { ...data });
             console.log(response.data.data.token);
-            if(response.data.data.token)
-            localStorage.setItem('auth_token',response.data.data.token);
+            if (response.data.data.token)
+                localStorage.setItem('auth_token', response.data.data.token);
 
         } catch (error) {
         }
@@ -88,17 +115,70 @@ const Reminder = () => {
     }
 
     const onSearch = e => {
-
+        setQueryValue(e.currentTarget.value)
+        fetchReminder(page, e.currentTarget.value)
     }
 
-    const fetchReminder = async () => {
+    const fetchReminder = async (page = 1, search = '', sortBy = 'created_on', sortDir = 'DESC', limit = 10) => {
+        
+        setLoading(true);
+        try {
+            const client = await AxiosClient();
+            const response = await client.get(`reminders/?page=${page}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`);
+            setList(response.data.data.reminders)
+            setTotal(response.data.data.page_info.total)
+            setPage(response.data.data.page_info.page)
 
+        } catch (error) {
+            setLoading(false);
+            message.error(error.response?.data?.message || error.response?.statusText
+                || error.message
+                || 'Seems like something went wrong with your request. Please try again.')
+        }
+        setLoading(false);
+    }
+
+    const sendReminder = async(record) => {
+        const hide = message.loading("Fetching")
+        try {
+            const client = await AxiosClient();
+            const response = await client.put(`reminders/notification/${record.id}`);
+            if (response.data.status !== "success") throw new Error(response?.data?.message)
+            message.success(response?.data?.message)
+        } catch (error) {
+            setLoading(false);
+            message.error(error.response?.data?.message || error.response?.statusText
+                || error.message
+                || 'Seems like something went wrong with your request. Please try again.')
+        }
+        hide()
+    }
+
+    const cancelReminder = async(record) => {
+        const hide = message.loading("Processing")
+        try {
+            const client = await AxiosClient();
+            const response = await client.put(`reminders/cancel/${record.id}`);
+            if (response.data.status !== "success") throw new Error(response?.data?.message)
+            message.success(response?.data?.message)
+            fetchReminder();
+        } catch (error) {
+            setLoading(false);
+            message.error(error.response?.data?.message || error.response?.statusText
+                || error.message
+                || 'Seems like something went wrong with your request. Please try again.')
+        }
+        hide()
     }
 
     useEffect(() => {
-        fetchReminder();
-        if(!localStorage.getItem('auth_token')){AuthUser();}     
-    }, [])
+        if (!localStorage.getItem('auth_token')) { AuthUser(); 
+            //fetchReminder(); 
+        }
+        else {
+            fetchReminder();
+        }
+    },[]);
 
     return (
         <>
@@ -106,26 +186,20 @@ const Reminder = () => {
                 <div className="container">
                     <fieldset>
                         <Row gutter={16}>
-                            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+                            <Col xs={6} sm={6} md={6} lg={6} xl={6}>
                                 <Input
                                     placeholder="Search"
                                     prefix={<SearchOutlined />}
                                     onInput={(e) => e.currentTarget.value === '' && onSearch(e)}
-                                    onKeyDown={(e) => e.key === 'Enter' && onSearch(e)} />
+                                    onKeyDown={(e) => e.key === 'Enter' && onSearch(e)} />         
                             </Col>
-                            <Col xs={24} sm={12} md={12} lg={12} xl={12}>
-
-                            </Col>
-                            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-                                <Button className="button_example" type="primary" onClick={() => setReminder({})}>
+                            <Col xs={18} sm={18} md={18} lg={18} xl={18}>
+                            <Button type="primary" className="button_right" onClick={() => setReminder({})}>
                                     <PlusCircleOutlined />
                                     <span>New Reminder</span>
                                 </Button>
-
                             </Col>
                         </Row>
-
-
                         <Card>
                             <div className="table-responsive">
                                 <Table
@@ -135,9 +209,9 @@ const Reminder = () => {
                                     onChange={(pagination, filter, sort) => fetchReminder(pagination.current, query_value, sort?.field, sort?.order?.slice(0, -3))}
                                     style={{ cursor: 'pointer' }}
                                     pagination={{ total }}
+                                    rowKey='id'
                                 />
                             </div>
-
                         </Card>
                     </fieldset>
                 </div>

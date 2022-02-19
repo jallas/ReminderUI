@@ -14,13 +14,12 @@ const NewReminderModal = ({ initialValues, onClose, onFinish }) => {
     try {
         if (time !== "") {
           let participants = data.participant.split(',');
-          console.log(participants);
-          const hide = message.loading("Fetching")
+          const hide = message.loading("Processing")
           try {
               const client = await AxiosClient();
               const response = await client.post(`reminders/create`, { ...data, event_time:time,participants  });
-              console.log(response.data.data);
-              message.success(response.data.data.message);
+              if (response.data.status !== "success") throw new Error(response?.data?.message)
+              message.success(response?.data?.message)
           } catch (error) {
           }
           hide()
@@ -56,7 +55,7 @@ const NewReminderModal = ({ initialValues, onClose, onFinish }) => {
           <Form.Item name="title" label="TITLE" rules={[{ required: true }]} >
             <Input autoComplete="off" />
           </Form.Item>
-          <Form.Item name="body" label="BODY" rules={[{ required: true }]}>
+          <Form.Item name="details" label="BODY" rules={[{ required: true }]}>
             <Input.TextArea rows={4} autoComplete="off" />
           </Form.Item>
           <Form.Item name="event_date" label="Date" rules={[{ required: true }]}>
