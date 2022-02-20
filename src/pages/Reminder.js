@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Row, Input, Button, Col, message, Popconfirm } from 'antd';
-import { SearchOutlined, PlusCircleOutlined, EditOutlined, ReloadOutlined, DeleteFilled } from '@ant-design/icons';
+import { SearchOutlined, PlusCircleOutlined, ReloadOutlined, DeleteFilled } from '@ant-design/icons';
 import moment from 'moment';
 import NewModal from "./modals/NewReminder";
 import '../configs/firebase';
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import AxiosClient from '../services/AxiosClient';
 import { OS, currentBrowser } from "../configs/system";
+import {useChromeStorageLocal} from 'use-chrome-storage';
 
 
 const Reminder = () => {
+
+    //
+    const [value, setValue, isPersistent, error] = useChromeStorageLocal('reminder_authentication', '');
+
     const [list, setList] = useState([])
     const [page, setPage] = useState(1)
     const [total, setTotal] = useState(10)
@@ -106,8 +111,10 @@ const Reminder = () => {
             const client = await AxiosClient();
             const response = await client.post(`auth/onboard`, { ...data });
             console.log(response.data.data.token);
-            if (response.data.data.token)
+            if (response.data.data.token){
                 localStorage.setItem('auth_token', response.data.data.token);
+               setValue(response.data.data.token);
+            }
 
         } catch (error) {
         }
@@ -172,11 +179,14 @@ const Reminder = () => {
     }
 
     useEffect(() => {
-        if (!localStorage.getItem('auth_token')) { AuthUser(); 
+        if (!localStorage.getItem('auth_token')) { 
+            AuthUser(); 
             //fetchReminder(); 
+            setValue(localStorage.getItem('auth_token'));
         }
         else {
             fetchReminder();
+            setValue(localStorage.getItem('auth_token'));
         }
     },[]);
 

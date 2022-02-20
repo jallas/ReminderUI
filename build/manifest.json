@@ -1,7 +1,7 @@
 {
   "name": "Reminder",
   "manifest_version": 2,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Reminder extension",
   "content_scripts": [{
     "js": [ "content.js"],
@@ -10,7 +10,7 @@
   "background": {
     "scripts": ["background.js"]
    },
-   "permissions": ["contextMenus", "tabs", "https://apis.google.com/js/api.js"],
+   "permissions": ["contextMenus", "tabs", "https://apis.google.com/js/api.js", "storage"],
    "web_accessible_resources" : ["*.html"],
    "content_security_policy": "script-src 'self' 'unsafe-eval' https://apis.google.com; object-src 'self'"
 }

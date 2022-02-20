@@ -21,3 +21,7 @@ chrome.runtime.onMessage.addListener(request => {
         });
     }
 })
+
+chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
+    console.log(request,"hello");
+});
