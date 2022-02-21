@@ -5,7 +5,6 @@ import './assets/css/style.css';
 import Reminder from '../src/pages/Reminder'
 
 function App() {
- 
   const [url, setUrl] = useState('');
 
   useEffect(() => {

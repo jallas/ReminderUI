@@ -7,20 +7,18 @@ import '../configs/firebase';
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import AxiosClient from '../services/AxiosClient';
 import { OS, currentBrowser } from "../configs/system";
-import {useChromeStorageLocal} from 'use-chrome-storage';
-
+//import {useChromeStorageLocal,createChromeStorageStateHookLocal} from 'use-chrome-storage';
+import {useSettingsStore} from '../services/chromeStorage';
 
 const Reminder = () => {
-
-    //
-    const [value, setValue, isPersistent, error] = useChromeStorageLocal('reminder_authentication', '');
-
     const [list, setList] = useState([])
     const [page, setPage] = useState(1)
     const [total, setTotal] = useState(10)
     const [loading, setLoading] = useState(false)
     const [reminder, setReminder] = useState()
     const [query_value, setQueryValue] = useState('')
+
+    const [setValue] = useSettingsStore();
 
 
     const tableColumns = [
@@ -113,8 +111,8 @@ const Reminder = () => {
             console.log(response.data.data.token);
             if (response.data.data.token){
                 localStorage.setItem('auth_token', response.data.data.token);
-               setValue(response.data.data.token);
-               fetchReminder();
+                setValue(response.data.data.token);
+               //fetchReminder();
             }
 
         } catch (error) {
@@ -180,7 +178,8 @@ const Reminder = () => {
     }
     useEffect(() => {
         if (!localStorage.getItem('auth_token')) { 
-            AuthUser(); 
+            AuthUser();
+            //setValue(localStorage.getItem('auth_token')); 
         }
         else {
             fetchReminder();
