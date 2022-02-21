@@ -114,6 +114,7 @@ const Reminder = () => {
             if (response.data.data.token){
                 localStorage.setItem('auth_token', response.data.data.token);
                setValue(response.data.data.token);
+               fetchReminder();
             }
 
         } catch (error) {
@@ -177,16 +178,12 @@ const Reminder = () => {
         }
         hide()
     }
-
     useEffect(() => {
         if (!localStorage.getItem('auth_token')) { 
             AuthUser(); 
-            //fetchReminder(); 
-            setValue(localStorage.getItem('auth_token'));
         }
         else {
             fetchReminder();
-            setValue(localStorage.getItem('auth_token'));
         }
     },[]);
 
