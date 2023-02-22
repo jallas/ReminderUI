@@ -10,6 +10,7 @@ import { OS, currentBrowser } from "../configs/system";
 //import {useChromeStorageLocal,createChromeStorageStateHookLocal} from 'use-chrome-storage';
 import {useSettingsStore} from '../services/chromeStorage';
 
+
 const Reminder = () => {
     const [list, setList] = useState([])
     const [page, setPage] = useState(1)
@@ -232,3 +233,4 @@ const Reminder = () => {
 }
 
 export default Reminder;
+
